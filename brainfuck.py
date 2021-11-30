@@ -4,7 +4,7 @@ import os
 class BFSyntaxError(Exception):
     pass
 
-# Cell memory object, implements operations on memory, including I/O
+# Cell memory object, implements operations on memory
 class MemState:
     def __init__(self):
         self.mem = []
@@ -21,6 +21,8 @@ class MemState:
             self.mem.append(0)
     def get(self):
         return self.mem[self.pointer+self.memOffset]
+    def set(self, value):
+        self.mem[self.pointer+self.memOffset] = value
     def ml(self):
         self.pointer -= 1
         self.mem_init()
@@ -31,20 +33,15 @@ class MemState:
         self.mem[self.pointer+self.memOffset] += 1
     def sub(self):
         self.mem[self.pointer+self.memOffset] -= 1
-    def out(self):
-        print(chr(self.get()), end='')
-        return -1
-    def inp(self):
-        return input()
     def print_mem(self):
         print(self.mem)
 
-# Interpret BF string code, with a given memory state
+# Interpret BF string code, optionally with an initial memory state
 def interpret_bf(s, state=MemState()):
     i = 0               # Interpreter index in BF string
     printed = False     # Will be set to True if a character is ever printed during execution (whether to print newline after execution or not)
     brace_map = {}      # Set of index->index values linking corresponding braces' indexes
-    op_count = 0        # Number of BF operations executed (loop cycles, excluding non-BF characters)
+    op_count = 0        # Number of BF operations executed (loop cycles, excluding non-BF characters processed)
 
     # Build brace_map
     if s.count('[') != s.count(']'):
@@ -73,11 +70,19 @@ def interpret_bf(s, state=MemState()):
             return None
         else:
             return brace_map[i] + 1
+    
+    # I/O operations
+    def out():
+        print(chr(state.get()), end='')
+        return -1
+    def inp():
+        # TODO : Input operation
+        pass
 
     # Main interpreter loop
     while i < len(s):
         try:
-            r = {'<': state.ml, '>': state.mr, '+': state.add, '-': state.sub, '.': state.out, ',': state.inp, '[': ls, ']': le}[s[i]]()
+            r = {'<': state.ml, '>': state.mr, '+': state.add, '-': state.sub, '.': out, ',': inp, '[': ls, ']': le}[s[i]]()
             if r == -1:
                 printed = True
                 i += 1
@@ -113,8 +118,8 @@ def main():
                 s += input('~~')
             try:
                 interpret_bf(s, state)
-            except BFSyntaxError:
-                print('Invalid syntax')
+            except BFSyntaxError as e:
+                print('Invalid syntax :', e)
     else:
         f = None
         try:
@@ -123,7 +128,7 @@ def main():
             if os.path.getsize(arg) <= 1024:     # Read whole file if its size is less than or equal to 1KB
                 op_count = interpret_bf(f.read())
             else:                                # If size of file is higher than 1KB, read file by chunks of 1KB + [necessary to include all matching brackets]
-                state = MemState()
+                state = MemState()               # I don't really know if this is useful, but just in case it is...
                 s = f.read(1024)
                 while s:
                     while s.count('[') > s.count(']'):
