@@ -90,7 +90,7 @@ typedef struct StackElement
 {
 	int value;
 	struct StackElement* next;
-} StackElement, *Stack;
+} *Stack;
 
 Stack stk_new()
 {
@@ -115,7 +115,7 @@ bool stk_empty(Stack stk)
 
 int stk_push(Stack* stk, int value)
 {
-	StackElement* new = malloc(sizeof(StackElement));
+	Stack new = malloc(sizeof(struct StackElement));
 	if (!new)
 		return -1;
 	new->value = value;
@@ -139,7 +139,7 @@ int stk_pop(Stack* stk, int* dest)
 
 typedef struct BFMemCell
 {
-	char value;
+	unsigned char value;
 	struct BFMemCell* prev;
 	struct BFMemCell* next;
 } *BFMem;
@@ -180,7 +180,7 @@ int mem_get(BFMem mem)
 	return mem->value;
 }
 
-void mem_set(BFMem mem, int value)
+void mem_set(BFMem mem, unsigned char value)
 {
 	mem->value = value;
 }
@@ -227,22 +227,31 @@ void mem_sub(BFMem mem)
 const string mem_repr(BFMem mem)
 {
 	BFMem first = mem;
+	int index = 0;
 	while (first->prev != NULL)
+	{
 		first = first->prev;
+		index++;
+	}
 	string str = str_new(2);
 	int str_len;
 	string tmp_str;
 	if (!str)
 		return NULL;
 	strcpy_s(str, sizeof(char) * 2, "[");
-	char value = 0;
+	unsigned char value = 0;
 	int bufsz = 0;
-
-	do 
+	int i = 0;
+	bool s;
+	bool nl;
+	char* formats[2][2] = { { "%d", "%d, " }, { "|%d|", "|%d|, " } };
+	do
 	{
+		s = (i == index);
+		nl = (first->next != NULL);
 		str_len = strlen(str);
 		value = first->value;
-		bufsz = ceil(log10(value > 0 ? value : 1) + 3.0) + str_len + 1;
+		bufsz = ceil(log10(value > 0 ? value : 1) + 1.0) + str_len + 1 + s + s + nl + nl;
 		tmp_str = realloc(str, sizeof(char) * bufsz);
 		if (!tmp_str)
 		{
@@ -251,10 +260,8 @@ const string mem_repr(BFMem mem)
 		}
 		str = tmp_str;
 		first = first->next;
-		if (first == NULL)
-			sprintf_s(str + str_len, bufsz - str_len, "%d", value);
-		else
-			sprintf_s(str + str_len, bufsz - str_len, "%d, ", value);
+		sprintf_s(str + str_len, bufsz - str_len, formats[s][nl], value);
+		i++;
 	} while (first != NULL);
 	str_len = strlen(str);
 	bufsz = 2 + str_len;
