@@ -11,7 +11,7 @@ Interactive shell includes special commands, which cannot be used combined with 
 - @ : Reset memory state
 - ! : Exit the shell.
 
-# NEW ! Now in C version for faster Brainf\*ck execution !
+# Now in C version for faster Brainf\*ck execution
 Was made using only standard C, so should be platform- and compiler-independant.
 
 ## Usage
